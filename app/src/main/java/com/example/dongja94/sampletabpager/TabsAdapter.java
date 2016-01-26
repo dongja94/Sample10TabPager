@@ -2,6 +2,7 @@ package com.example.dongja94.sampletabpager;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -24,7 +25,7 @@ public class TabsAdapter extends FragmentPagerAdapter implements
 	private final FragmentManager mFragmentManager;
 	private final ArrayList<TabInfo> mTabs = new ArrayList<TabInfo>();
 	private final static String FIELD_KEY_PREFIX = "tabinfo";
-
+	private final static String FIELD_CURRENT_TAG = "currentTag";
 	
 	static final class TabInfo {
 		private final String tag;
@@ -57,7 +58,7 @@ public class TabsAdapter extends FragmentPagerAdapter implements
 
 	public TabsAdapter(FragmentActivity activity, TabHost tabHost,
 					   ViewPager pager) {
-		this(activity,activity.getSupportFragmentManager(),tabHost,pager);
+		this(activity, activity.getSupportFragmentManager(), tabHost, pager);
 	}
 	
 	public TabsAdapter(Context context, FragmentManager fragmentManager, TabHost tabHost, ViewPager pager) {
@@ -71,7 +72,24 @@ public class TabsAdapter extends FragmentPagerAdapter implements
 		mViewPager.addOnPageChangeListener(this);
 	}
 
+	@Override
+	public Parcelable saveState() {
+		Bundle b = new Bundle();
+		onSaveInstanceState(b);
+		return b;
+	}
+
+	@Override
+	public void restoreState(Parcelable state, ClassLoader loader) {
+		super.restoreState(state, loader);
+		if (state != null && state instanceof Bundle) {
+			Bundle b = (Bundle) state;
+			onRestoreInstanceState(b);
+		}
+	}
+
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		mTabHost.setCurrentTabByTag(savedInstanceState.getString(FIELD_CURRENT_TAG));
 		for (TabInfo info : mTabs) {
 			String keyfield = FIELD_KEY_PREFIX + info.tag;
 			info.fragment = mFragmentManager.getFragment(savedInstanceState, keyfield);
@@ -79,6 +97,7 @@ public class TabsAdapter extends FragmentPagerAdapter implements
 	}
 	
 	public void onSaveInstanceState(Bundle outState) {
+		outState.putString(FIELD_CURRENT_TAG, mTabHost.getCurrentTabTag());
 		for (TabInfo info : mTabs) {
 			String keyfield = FIELD_KEY_PREFIX + info.tag;
 			if (info.fragment != null) {
